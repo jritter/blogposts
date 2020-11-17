@@ -62,7 +62,7 @@ While this approach solves some problems of plain SSH port forwarding, it also h
 
 ## Enter Dynamic Port Forwarding
 
-Having explored the previous two approaches and learned about the disadvantages of them, t would be great to have a third option which brings us the best of both worlds:
+Having explored the previous two approaches and learned about the disadvantages of them, it would be great to have a third option which brings us the best of both worlds:
 
 * The browser of the workstation can be used
 * Connectivity and DNS situation should be the same as on the Jump server
