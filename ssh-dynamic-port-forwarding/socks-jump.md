@@ -1,10 +1,10 @@
 # SSH Dynamic Port Forwarding
 
-Many enterprises are using Secure Shell (SSH) jump servers in order to access business critical systems. Administrators first have to connect to a jump server using SSH, possibily through a VPN, before being able to connect to the target system. This usually works great as long as an administrator sticks with command line based administration. It gets a bit more tricky when an administrator would like to break out of the command line realm, and for instance use a web based interface.
+Many enterprises are using Secure Shell (SSH) jump servers in order to access business critical systems. Administrators first have to connect to a jump server using SSH, possibly through a VPN, before being able to connect to the target system. This usually works great as long as an administrator sticks with command line based administration. It gets a bit more tricky when an administrator would like to break out of the command line realm, and for instance use a web based interface.
 
-Let us look at the following scenario: Bob is a system administrator at Securecorp, and he just got an alert, indicating that a database cluster consisting of `sirius.securecorp.io` and `orion.securecorp.io` is performing poorly. For a first analysis, he usually uses the RHEL8 web console. From his workstation, the firewall doesn't allow him to connect directly to this system, but he has the possibility to go through a jump server called `bastion.securecorp.io`.
+Let's look at the following scenario: Bob is a system administrator at Securecorp, and he just got an alert, indicating that a database cluster consisting of `sirius.securecorp.io` and `orion.securecorp.io` is performing poorly. For a first analysis, he usually uses the RHEL8 web console. From his workstation, the firewall doesn't allow him to connect directly to this system, but he has the possibility to go through a jump server called `bastion.securecorp.io`.
 
-SSH access to the database cluster is straight forward:
+SSH command line access to the database cluster is straight forward:
 
 ```bash
 [bob@workstation ~]$ ssh bastion.securecorp.io
@@ -18,13 +18,13 @@ SSH access to the database cluster is straight forward:
 [bob@orion ~]$
 ```
 
-But what if Bob wants to access the RHEL8 web console of sirius and orion? There are multiple ways to achieve this goal.
+But what if Bob wants to access the RHEL8 web console of `sirius.securecorp.io` and `orion.securecorp.io`? There are multiple ways, all involving port forwarding of some sort, to achieve this goal using SSH.
 
 **Disclaimer**: In some organizations, security policies do not allow port forwarding. To make sure that you don't breach any rules, please consult with your IT security representative.
 
 ## SSH Port Forwarding
 
-Using SSH, Bob opens a TCP tunnel for both systems, pointing to the web console port (9090) of sirius and orion at the other side.
+Using SSH, Bob opens a TCP tunnel for both systems, pointing to the web console port (9090) of `sirius.securecorp.io` and `orion.securecorp.io` at the other side.
 
 ```bash
 [bob@workstation ~]$ ssh -L 9090:sirius.securecorp.io:9090 bastion.securecorp.io
@@ -36,16 +36,16 @@ Using SSH, Bob opens a TCP tunnel for both systems, pointing to the web console 
 [bob@bastion ~]$
 ```
 
-Bob can now point the browser of his local workstation to <https://localhost:9090> to access the web console of sirius, and <https://localhost:9091> to access the web console of orion.
+Bob can now point the browser of his local workstation to <https://localhost:9090> to access the web console of `sirius.securecorp.io`, and <https://localhost:9091> to access the web console of `orion.securecorp.io`.
 
-This approach might work well for certain cases, but has its limitations:
+This approach might work well in certain cases, but has its limitations:
 
-* **TLS Certificate validation:** The local browser is unhappy because in most cases, the certificate common name doesn't match with the hostname in the address bar (localhost), so the certificate validation fails
-* **Redirects** When the website you are accessing redirects you to another URL, the connection fails because port forwarding is only valid for exactly this webserver. This might be a problem when using Single Sign On.
+* **TLS certificate validation:** The local browser is unhappy because in most cases, the certificate common name doesn't match with the hostname in the address bar (localhost), so the certificate validation fails.
+* **Redirects:** When the website you are accessing redirects you to another URL, the connection fails because port forwarding is only valid for exactly this web server. This might be a problem when using single sign on for instance.
 
 ## Start a Browser on the Jump Server
 
-Another approach for Bob is to start a browser such as Firefox on the jump server, and display it locally on his workstation. For that, SSH provides a feature called X forwarding, which can be used in this situation.
+Another approach for Bob would be to start a browser such as Firefox on the jump server, and display it locally on his workstation. For that, SSH provides a feature called X forwarding, which can be used in this situation.
 
 ```bash
 [bob@workstation ~]$ ssh -X bastion.securecorp.io
@@ -53,21 +53,21 @@ Another approach for Bob is to start a browser such as Firefox on the jump serve
 [bob@bastion ~]$ firefox https://orion.securecorp.io:9090 &
 ```
 
-Using this method, the browser process runs on the jump server, and the connection to the web console of sirius and orion are allowed. Only the rendering happens on the workstation of Bob.
+Using this method, the browser process runs on the jump server, and the connection to the web console of `sirius.securecorp.io` and `orion.securecorp.io` are allowed. Only the rendering of the browser window happens on the workstation of Bob.
 
 While this approach solves some problems of plain SSH port forwarding, it also has limitations:
 
-* **Performance:** This method usually performs rather poorly, because the graphical output has to be transfered from the jump server to the workstation, which is very inefficient.
-* **Prerequisites:** A browser such as Firefox needs to be installed on the jump server, and an X server needs to be running on the workstation
+* **Performance:** This method usually performs rather poorly, because the graphical output has to be transferred from the jump server to the workstation through the network, which is very inefficient.
+* **Prerequisites:** A browser such as Firefox needs to be installed on the jump server, and an X server needs to be running on the workstation.
 
 ## Enter Dynamic Port Forwarding
 
-Having explored the previous two approaches and learned about the disadvantages of them, it would be great to have a third option which brings us the best of both worlds:
+Having explored the previous two approaches and learned about the disadvantages of them, t would be great to have a third option which brings us the best of both worlds:
 
-* Browser of the workstation can be used
+* The browser of the workstation can be used
 * Connectivity and DNS situation should be the same as on the Jump server
 
-To achieve that, SSH provides a feature called **dynamic port forwarding**, which leverages the [SOCKS](https://en.wikipedia.org/wiki/SOCKS) protocol. In this configuration, SSH acts as a SOCKS proxy, relaying all relevant traffic through the SSH connection. For this to happen, the client (in our example it is the Browser) needs to be SOCKS aware.
+To achieve this, SSH provides a feature called **dynamic port forwarding**, which leverages the [SOCKS](https://en.wikipedia.org/wiki/SOCKS) protocol. In this configuration, SSH acts as a SOCKS proxy, relaying all relevant traffic through the SSH connection. For this to happen, the client (in our example it is the browser) needs to be SOCKS aware.
 
 Bob can initiate an SSH Session with dynamic port forwarding as follows:
 
@@ -113,4 +113,4 @@ Host bastion
 
 ## Conclusion
 
-There are many ways how it is possible to connecto to internal systems using a jump server, and the possibilities outlined above are by no means exhaustive. In my experience though, SSH provides you with a very powerful tool kit which in most case is available and ready to go without many hurdles. Dynamic port forwarding is one of these tools that helped me to be more productive in specific situations, so please give it a try yourself!
+There are many ways how it is possible to connect to internal systems using a jump server, and the possibilities outlined above are by no means exhaustive. In my experience though, SSH provides you with a very powerful tool kit which in most case is available and ready to go without many hurdles. Dynamic port forwarding is one of these tools that helped me to be more productive in specific situations, so please give it a try yourself!
